@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <link href="kendo/styles/kendo.mobile.all.min.css" rel="stylesheet">
+    <link href="styles/main.css" rel="stylesheet">
+    <script src="cordova.js"></script>
+    <script src="kendo/js/jquery.min.js"></script>
+    <script src="kendo/js/kendo.mobile.min.js"></script>
+    <script src="https://bs-static.cdn.telerik.com/1.4.1/everlive.all.min.js"></script>
+    <script src="scripts/app.js"></script>
+</head>
+
+<body>
+    <div data-role="view" data-model="listview" data-title="QAD Inbox">
+        <header data-role="header">
+            <div data-role="navbar">
+                <span data-role="view-title"></span>
+                <button data-role="button" data-align="left" data-bind="click: runAPI">Refresh</button>
+            </div>
+        </header>
+        <ul id="images"></ul>
+    </div>
+</body>
+
+</html>

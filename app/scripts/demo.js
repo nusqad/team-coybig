@@ -21,16 +21,20 @@
         },
 
         scan: function (preferFrontCamera, showFlipCameraButton) {
+            that=this;
+
             if (this.checkSimulator()){
-                key = "rpw01";
-                this.invokeApi();
+                itemCode = "rpw01";
+                that.invokeApi();
             } else {
                 cordova.plugins.barcodeScanner.scan(
 
                     // success callback function
                     function (result) {
                         // wrapping in a timeout so the dialog doesn't free the app
-                        key = result.text;
+                        itemCode = result.text;
+                        that.invokeApi();
+/*
                         var r = confirm("Attach an image for " + key + "?");
                         if (r == true) {
                             x = "You pressed OK!";
@@ -40,6 +44,7 @@
                         setTimeout(function() {
                             alert("Now go and invoke the api.");                            
                         }, 0);
+*/
                     },
                     // error callback function
                     function (error) {
@@ -53,6 +58,88 @@
                     }
                 );
             }
+        },
+
+        attach: function () {
+            alert('About to attach picture for:' + itemCode);
+
+            var success = function (fileURI) {
+                navigator.notification.confirm("FileURI:" + fileURI);
+                window.resolveLocalFileSystemURI(
+                        fileURI, 
+                        function(fileEntry){
+                            console.log(fileEntry);
+                            navigator.notification.confirm("Before Creating File to attach");
+                            fileEntry.file(
+                                function(file) {
+                                    var fileToAttach = file;    
+                                    var fileName = fileToAttach.name;
+                                    navigator.notification.confirm("After Creating File to attach");
+                                    var attachDS = new kendo.data.DataSource({
+                                        transport: {
+                                            read: {
+                                                // the remote service url
+                                                url: "https://yab.qad.com/hackathon/api/qracore/fileAttachment?objectId=urn%3Abe%3Acom.qad.base.item.IItem%3A10USA." + itemCode + "&name=MobileUpload-" + fileName,
+                                                // the request type
+                                                type: "post",
+                                                contentType : 'application/octet-stream',
+                                                processData : false,
+                                                cache : false,
+                                                data : fileToAttach,
+                                                // Set authorization header
+                                                beforeSend: function (xhr) {
+                                                    xhr.setRequestHeader('Authorization', 'Basic bWZnOgo=');
+                                                    //xhr.setRequestHeader('objectId','urn:be:com.qad.base.item.IItem:10USA.rpw01')
+                                                    //xhr.setRequestHeader('pluginName','qad-erp-base')
+
+                                                },
+                                                // the data type of the returned result
+                                                dataType: "json",
+                                                success : function(data) {
+                                                    navigator.notification.confirm("AttachDS success");
+                                                },
+                                                error : function(xhr, statusText, error) {
+                                                    navigator.notification.confirm("AttachDS error: " + error);
+                                                }
+                                            }
+                                        },
+                                        // describe the result format
+                                        schema: {
+                                            // the data, which the data source will be bound to is in the "list" field of the response
+                                            data: "data"
+                                        }
+                                    });
+                                    //attachDS.add(fileToAttach);
+                                    //attachDS.sync(function () {
+                                    attachDS.fetch(function () {
+                                        var data2 = this.data();
+                                        navigator.notification.confirm("AttachDS fetch complete");
+                                        for (var i = data2.length - 1; i >= 0; i--) {
+                                            console.log(data2[i].text);
+                                        };
+                                    }); 
+                                }, 
+                                function(e){
+                                    console.log(e);
+                                    navigator.notification.confirm("Error in fileEntry.file: " + e);
+                            });
+                        },
+                        function(e){
+                            console.log(e);
+                            navigator.notification.confirm("Error in resolveLocalFileSystemURI: " + e);
+                        }
+                );
+            };
+            var error = function () {
+                navigator.notification.alert("Unfortunately we could not add the image");
+            };
+            var config = {
+                destinationType: 1,//Camera.DestinationType.FILE_URI,
+                targetHeight: 400,
+                targetWidth: 400
+            };
+            navigator.camera.getPicture(success, error, config);
+
         },
 
         encode: function () {
@@ -91,7 +178,6 @@
         },
 
         invokeApi: function() {
-                var itemCode = "rpw01";
                 var itemDS = new kendo.data.DataSource({
                     transport: {
                         read: {
@@ -119,17 +205,10 @@
                 });
                 itemDS.fetch(function () {
                     var data = this.data();
-                    for (var i = data.length - 1; i >= 0; i--) {
-                        $('#itemcode').text(data[i].itemCode);
-                        $('#itemdesc').text(data[i].description);
-                        console.log(data[i].itemCode);
-                        console.log(data[i].description);
-                        //console.log(data[i].salesOrderNumber);
-                        //console.log(data[i].soldToCustomerCode);
-                        //console.log(data[i].text);
-                        //data[i].user = data[i].text.substring(28,31);
-                        //data[i].action = data[i].text.substring(38);
-                    }
+                    $('#itemcode').text(data[0].itemCode);
+                    $('#itemdesc').text(data[0].description);
+                    $('#productLine').text(data[0].productLine);
+                    $('#itemStatus').text(data[0].itemStatus);
                 });
         }
     });
